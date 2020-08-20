@@ -1,13 +1,12 @@
 -- START:   'Tuesday, September 01 12:00 UTC' (epoch=1598961600, batchId=5329872)
 -- END:   'Tuesday, September 29 12:00 UTC' (epoch=1601380800, batchId=5337936)
 WITH 
-constants (start_time, start_batch, end_time, end_batch, gno_price_in_usd, num_tokens_required, min_deposit_amount) as (
+constants (start_time, start_batch, end_time, end_batch, num_tokens_required, min_deposit_amount) as (
     values (
         CAST('2020-09-01 12:00:00' as TIMESTAMP), /* start_time */
         5329872, /* start_batch */
         CAST('2020-09-29 12:00:00' as TIMESTAMP), /* end_time */
         5337936, /* end_batch */
-        40, /* gno_price_in_usd */
         4, /* num_tokens_required */
         5000 /* min_deposit_amount */
     )
@@ -263,6 +262,13 @@ returns as(
     FROM lp_trades
     GROUP BY trader_hex
 ),
+last_gno_price as (
+    SELECT token_usd_price_external
+    FROM gnosis_protocol."view_price_batch"
+    WHERE token_id=18
+    ORDER BY batch_id DESC
+    LIMIT 1
+),
 result as (
 SELECT
     position,
@@ -282,10 +288,10 @@ SELECT
     END as balance,
     COALESCE(profit, 0) as "Profit w/o GNO",
     (COALESCE(profit, 0) / score) * 12 * 100 as "% APR w/o GNO",
-    ((COALESCE(profit, 0) + (gno_estimation * constants.gno_price_in_usd)) / score) * 12 * 100 as "% APR with GNO",
+    ((COALESCE(profit, 0) + (gno_estimation * last_gno_price.token_usd_price_external)) / score) * 12 * 100 as "% APR with GNO",
     COALESCE(swaps, 0) as "# of swaps",
     '0x6810e776880C02933D47DB1b9fc05908e5386b96' as token_address
-FROM constants, ranking
+FROM last_gno_price, ranking
 LEFT OUTER JOIN current_balance
     ON ranking.trader_hex = current_balance.trader
 LEFT OUTER JOIN returns
