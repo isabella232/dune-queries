@@ -263,10 +263,9 @@ returns as(
     GROUP BY trader_hex
 ),
 last_gno_price as (
-    SELECT token_usd_price_external
-    FROM gnosis_protocol."view_price_batch"
-    WHERE token_id=18
-    ORDER BY batch_id DESC
+    SELECT price 
+    FROM prices."usd_gno"
+    ORDER BY minute DESC
     LIMIT 1
 ),
 result as (
@@ -288,7 +287,7 @@ SELECT
     END as balance,
     COALESCE(profit, 0) as "Profit w/o GNO",
     (COALESCE(profit, 0) / score) * 12 * 100 as "% APR w/o GNO",
-    ((COALESCE(profit, 0) + (gno_estimation * last_gno_price.token_usd_price_external)) / score) * 12 * 100 as "% APR with GNO",
+    ((COALESCE(profit, 0) + (gno_estimation * last_gno_price.price)) / score) * 12 * 100 as "% APR with GNO",
     COALESCE(swaps, 0) as "# of swaps",
     '0x6810e776880C02933D47DB1b9fc05908e5386b96' as token_address
 FROM last_gno_price, ranking
