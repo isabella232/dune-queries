@@ -264,7 +264,7 @@ returns as(
 ),
 last_gno_price as (
     SELECT price 
-    FROM prices."usd_gno"
+    FROM prices."usd_6810e776880c02933d47db1b9fc05908e5386b96"
     ORDER BY minute DESC
     LIMIT 1
 ),
